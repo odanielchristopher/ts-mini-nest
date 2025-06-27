@@ -1,19 +1,16 @@
 import 'reflect-metadata';
 
-import express, { Application } from 'express';
+import express from 'express';
 
 import { loadProjectFiles } from '../kernel/di/load';
 
-import { cors } from './utils/cors';
-
-const app: Application = express();
+const app = express();
 
 async function bootstrap() {
-  await loadProjectFiles(); // 🔁 Carrega todos os arquivos e ativa os decorators
+  await loadProjectFiles(); // Carrega todos os arquivos da pasta application e ativa os decorators
 
   const { routes } = await import('./routes');
 
-  app.use(cors);
   app.use(express.json());
   app.use(routes);
 

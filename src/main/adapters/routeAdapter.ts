@@ -1,32 +1,22 @@
 import { RequestHandler } from 'express';
 import { ZodError } from 'zod';
 
-import { SchemaOptions } from '../../kernel/decorators/Schema';
+import { getSchema } from '../../kernel/decorators/Schema';
 import { Constructor } from '../../shared/types/Constructor';
 import { Response } from '../../shared/types/Response';
+import { parseRequest } from '../utils/parseRequest';
 
 export function routeAdapter(
   impl: Constructor,
   controller: any,
   methodName: string,
 ): RequestHandler {
-  const schema: SchemaOptions | undefined = Reflect.getMetadata(
-    'custom:schema',
-    impl.prototype,
-    methodName,
-  );
+  const schema = getSchema(impl, methodName);
 
   return async (request, response) => {
     try {
-      // Faz parse do corpo, se houver schema
-
-      const input = {
-        body: schema?.body ? schema.body.parse(request.body) : undefined,
-        params: schema?.params
-          ? schema.params.parse(request.params)
-          : undefined,
-        query: schema?.query ? schema.query.parse(request.query) : undefined,
-      };
+      // Faz parse da request, se houver schema
+      const input = schema ? parseRequest(request, schema) : request;
 
       // Chama o handler original
       const { code, body }: Response<any> = await controller[methodName](input);
