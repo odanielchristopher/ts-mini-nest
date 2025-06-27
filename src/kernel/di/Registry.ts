@@ -1,4 +1,5 @@
 import { Constructor } from '../../shared/types/Constructor';
+import { HttpHandler } from '../../shared/types/HttpHandler';
 
 export class Registry {
   private static instance: Registry;
@@ -108,11 +109,3 @@ export namespace Registry {
     prefix: string;
   };
 }
-
-export type HttpHandler = {
-  endpoint: string;
-  method: HttpMethod;
-  handler: string;
-};
-
-export type HttpMethod = 'get' | 'post' | 'put' | 'delete';

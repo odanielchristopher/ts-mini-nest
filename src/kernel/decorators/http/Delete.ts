@@ -1,4 +1,4 @@
-import { HttpHandler } from '../../di/Registry';
+import { HttpHandler } from '../../../shared/types/HttpHandler';
 
 export function Delete(path?: string): MethodDecorator {
   const endpoint = path ? `/${path}` : '/';
