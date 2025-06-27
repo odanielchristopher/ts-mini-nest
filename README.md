@@ -29,12 +29,13 @@ src/
 │   ├── decorators/         # Controller, Get, Post, Schema
 │   ├── di/                 # Registry de injeção
 │   └── http/               # Adaptadores e roteamento
-├── modules/
-│   └── accounts/
-│       ├── controllers/
-│       ├── services/
-│       ├── schemas/
-│       └── repositories/
+├── application/
+│   ├── controllers/
+│   ├── services/
+│   ├── schemas/
+│   └── repositories/
+├── main/
+│   └── adapters/
 └── shared/
     └── types/              # Tipagens genéricas Request<T>, Response<T>
 ```
