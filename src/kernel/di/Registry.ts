@@ -19,20 +19,12 @@ export class Registry {
   register(impl: Constructor, isController = false, prefix = '') {
     const token = impl.name;
 
-    // Descobre dependências do construtor
-    const deps = Reflect.getMetadata('design:paramtypes', impl) ?? [];
-
-    const hasToken = this.providers.get(token);
-
-    if (hasToken) {
-      if (hasToken.deps.length !== deps.length) {
-        this.providers.delete(token); // corrigido aqui
-
-        this.register(impl, isController, prefix); // re-registra com os novos deps
-      }
-
+    if (this.providers.has(token)) {
       return;
     }
+
+    // Descobre dependências do construtor
+    const deps = Reflect.getMetadata('design:paramtypes', impl) ?? [];
 
     // Inicializa o provider
     const provider: Registry.Provider = {
@@ -45,23 +37,7 @@ export class Registry {
 
     // Se for um controller, busca os handlers nos metadados do prototype
     if (isController) {
-      const prototype = impl.prototype;
-
-      const methodNames = Object.getOwnPropertyNames(prototype).filter(
-        (name) =>
-          typeof prototype[name] === 'function' && name !== 'constructor',
-      );
-
-      for (const name of methodNames) {
-        const handler: HttpHandler | undefined = Reflect.getMetadata(
-          'custom:http',
-          prototype,
-          name,
-        );
-        if (handler) {
-          provider.handlers!.push({ ...handler, handler: name });
-        }
-      }
+      this.setHandlers(provider);
     }
 
     this.providers.set(token, provider);
@@ -92,6 +68,32 @@ export class Registry {
       .filter((provider) => provider.isController)
       .map((provider) => provider.impl);
   }
+
+  private getMethodNames(impl: Constructor): string[] {
+    const prototype = impl.prototype;
+
+    return Object.getOwnPropertyNames(prototype).filter(
+      (name) => typeof prototype[name] === 'function' && name !== 'constructor',
+    );
+  }
+
+  private setHandlers(provider: Registry.Provider) {
+    const prototype = provider.impl.prototype;
+
+    const methodNames = this.getMethodNames(provider.impl);
+
+    for (const name of methodNames) {
+      const handler: HttpHandler | undefined = Reflect.getMetadata(
+        'custom:http',
+        prototype,
+        name,
+      );
+
+      if (handler) {
+        provider.handlers.push({ ...handler, methodName: name });
+      }
+    }
+  }
 }
 
 export namespace Registry {
@@ -99,7 +101,7 @@ export namespace Registry {
     impl: Constructor;
     deps: Constructor[];
     prefix: string;
-    handlers?: HttpHandler[];
+    handlers: HttpHandler[];
     isController: boolean;
   };
 

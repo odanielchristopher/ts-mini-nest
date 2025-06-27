@@ -9,10 +9,6 @@ import {
   CreateAccountDto,
   createAccountSchema,
 } from '../schemas/accounts/createAccountSchema';
-import {
-  GetOneAccountQuery,
-  getOneAccountQuerySchema,
-} from '../schemas/accounts/getOneAccountQuerySchema';
 import { AccountsService } from '../services/AccountsService';
 
 @Controller('accounts')
@@ -26,21 +22,6 @@ export class AccountsController {
     return {
       code: 200,
       body,
-    };
-  }
-
-  @Get(':accountId')
-  @Schema({
-    params: getOneAccountQuerySchema,
-  })
-  getOne(
-    request: Request<null, GetOneAccountQuery>,
-  ): Response<{ accountId: string }> {
-    const { accountId } = request.params;
-
-    return {
-      code: 200,
-      body: { accountId },
     };
   }
 

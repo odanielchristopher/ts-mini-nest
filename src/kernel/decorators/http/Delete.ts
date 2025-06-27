@@ -6,8 +6,8 @@ export function Delete(path?: string): MethodDecorator {
   return (target, propertyKey) => {
     const handler: HttpHandler = {
       endpoint,
-      method: 'delete',
-      handler: propertyKey as string,
+      httpMethod: 'delete',
+      methodName: propertyKey as string,
     };
 
     Reflect.defineMetadata('custom:http', handler, target, propertyKey);

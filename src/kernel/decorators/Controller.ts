@@ -6,10 +6,12 @@ export function Controller(prefix?: string): ClassDecorator {
     prefix = `/${prefix}`;
   }
 
+  const isController = true;
+
   return (target) => {
     Registry.getInstance().register(
       target as unknown as Constructor,
-      true,
+      isController,
       prefix,
     );
   };

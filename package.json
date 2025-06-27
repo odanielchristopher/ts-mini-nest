@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "tsc:watch": "tsc --watch",
+    "tsc:watch": "rm -rf out && tsc --watch",
     "start": "node --watch ./out/main/main.js"
   },
   "keywords": [],

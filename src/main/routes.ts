@@ -15,9 +15,12 @@ impls.forEach((impl) => {
     instance: controller,
   } = Registry.getInstance().resolve(impl);
 
-  handlers.forEach(({ endpoint, handler, method }) => {
+  handlers.forEach(({ endpoint, methodName, httpMethod }) => {
     const path = `${prefix}${endpoint}`;
 
-    routes[method](path, routeAdapter(impl, controller, handler));
+    // eslint-disable-next-line no-console
+    console.log(path, httpMethod.toUpperCase());
+
+    routes[httpMethod](path, routeAdapter(impl, controller, methodName));
   });
 });

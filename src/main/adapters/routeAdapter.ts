@@ -8,30 +8,37 @@ import { Response } from '../../shared/types/Response';
 export function routeAdapter(
   impl: Constructor,
   controller: any,
-  handler: string,
+  methodName: string,
 ): RequestHandler {
   const schema: SchemaOptions | undefined = Reflect.getMetadata(
     'custom:schema',
     impl.prototype,
-    handler,
+    methodName,
   );
 
   return async (request, response) => {
     try {
       // Faz parse do corpo, se houver schema
-      if (schema?.body) request.body = schema.body.parse(request.body);
-      if (schema?.params) request.params = schema.params.parse(request.params);
-      if (schema?.query) request.query = schema.query.parse(request.query);
+
+      const input = {
+        body: schema?.body ? schema.body.parse(request.body) : undefined,
+        params: schema?.params
+          ? schema.params.parse(request.params)
+          : undefined,
+        query: schema?.query ? schema.query.parse(request.query) : undefined,
+      };
 
       // Chama o handler original
-      const { code, body }: Response<any> = await controller[handler](request);
+      const { code, body }: Response<any> = await controller[methodName](input);
 
       response.status(code).send(body);
     } catch (error) {
       if (error instanceof ZodError) {
         response.status(400).send({ error: error.issues });
+        return;
       }
 
+      // eslint-disable-next-line no-console
       console.log(error);
       response.status(500).send({ error: 'Internal Server Error!' });
     }

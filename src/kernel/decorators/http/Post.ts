@@ -6,8 +6,8 @@ export function Post(path?: string): MethodDecorator {
   return (target, propertyKey) => {
     const handler: HttpHandler = {
       endpoint,
-      method: 'post',
-      handler: propertyKey as string,
+      httpMethod: 'post',
+      methodName: propertyKey as string,
     };
 
     Reflect.defineMetadata('custom:http', handler, target, propertyKey);
