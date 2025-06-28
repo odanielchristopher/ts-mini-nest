@@ -1,10 +1,14 @@
 import { Constructor } from '../../shared/types/Constructor';
 import { HttpHandler } from '../../shared/types/HttpHandler';
+import { getHandlerList } from '../../shared/utils/createRouteDecorator';
+import { getPrefix, isController } from '../decorators/Controller';
+import { isInjectable } from '../decorators/Injectable';
 
 export class Registry {
   private static instance: Registry;
 
   private readonly providers = new Map<string, Registry.Provider>();
+  private readonly controllers: Registry.Controller[] = [];
 
   static getInstance() {
     if (!this.instance) {
@@ -16,7 +20,7 @@ export class Registry {
 
   private constructor() {}
 
-  register(impl: Constructor, isController = false, prefix = '') {
+  register(impl: Constructor) {
     const token = impl.name;
 
     if (this.providers.has(token)) {
@@ -26,26 +30,18 @@ export class Registry {
     // Descobre dependências do construtor
     const deps = Reflect.getMetadata('design:paramtypes', impl) ?? [];
 
-    // Inicializa o provider
-    const provider: Registry.Provider = {
+    this.providers.set(token, {
       impl,
       deps,
-      handlers: [],
-      prefix,
-      isController,
-    };
+    });
 
-    // Se for um controller, busca os handlers nos metadados do prototype
-    if (isController) {
-      this.setHandlers(provider);
+    // Verifica se é um controller
+    if (isController(impl)) {
+      this.setController(impl);
     }
-
-    this.providers.set(token, provider);
   }
 
-  resolve<TImpl extends Constructor>(
-    impl: TImpl,
-  ): Registry.ResolveOutPut<TImpl> {
+  resolve<TImpl extends Constructor>(impl: TImpl): InstanceType<TImpl> {
     const token = impl.name;
     const provider = this.providers.get(token);
 
@@ -53,46 +49,31 @@ export class Registry {
       throw new Error(`'${token}' not registered.`);
     }
 
-    const deps = provider.deps.map((dep) => this.resolve(dep).instance);
+    if (!isInjectable(impl) && !isController(impl)) {
+      throw new Error(`'${token}' is not injectable.`);
+    }
+
+    const deps = provider.deps.map((dep) => this.resolve(dep));
     const instance = new provider.impl(...deps);
 
-    return {
-      instance,
-      prefix: provider.prefix,
-      handlers: provider.handlers ?? [],
-    };
+    return instance;
   }
 
-  getControllers(): Constructor[] {
-    return Array.from(this.providers.values())
-      .filter((provider) => provider.isController)
-      .map((provider) => provider.impl);
+  getControllers(): Registry.Controller[] {
+    return this.controllers;
   }
 
-  private getMethodNames(impl: Constructor): string[] {
+  private setController(impl: Constructor) {
     const prototype = impl.prototype;
 
-    return Object.getOwnPropertyNames(prototype).filter(
-      (name) => typeof prototype[name] === 'function' && name !== 'constructor',
-    );
-  }
+    const prefix = getPrefix(impl);
+    const handlers = getHandlerList(prototype);
 
-  private setHandlers(provider: Registry.Provider) {
-    const prototype = provider.impl.prototype;
-
-    const methodNames = this.getMethodNames(provider.impl);
-
-    for (const name of methodNames) {
-      const handler: HttpHandler | undefined = Reflect.getMetadata(
-        'custom:http',
-        prototype,
-        name,
-      );
-
-      if (handler) {
-        provider.handlers.push({ ...handler, methodName: name });
-      }
-    }
+    this.controllers.push({
+      impl,
+      prefix,
+      handlers,
+    });
   }
 }
 
@@ -100,14 +81,11 @@ export namespace Registry {
   export type Provider = {
     impl: Constructor;
     deps: Constructor[];
-    prefix: string;
-    handlers: HttpHandler[];
-    isController: boolean;
   };
 
-  export type ResolveOutPut<TImpl extends Constructor> = {
-    instance: InstanceType<TImpl>;
-    handlers: HttpHandler[];
+  export type Controller = {
+    impl: Constructor;
     prefix: string;
+    handlers: (HttpHandler & { methodName: string })[];
   };
 }

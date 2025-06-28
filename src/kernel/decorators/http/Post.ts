@@ -1,15 +1,3 @@
-import { HttpHandler } from '../../../shared/types/HttpHandler';
+import { createRouteDecorator } from '../../../shared/utils/createRouteDecorator';
 
-export function Post(path?: string): MethodDecorator {
-  const endpoint = path ? `/${path}` : '/';
-
-  return (target, propertyKey) => {
-    const handler: HttpHandler = {
-      endpoint,
-      httpMethod: 'post',
-      methodName: propertyKey as string,
-    };
-
-    Reflect.defineMetadata('custom:http', handler, target, propertyKey);
-  };
-}
+export const Post = createRouteDecorator('post');

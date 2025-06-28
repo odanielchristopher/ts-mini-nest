@@ -1,8 +1,13 @@
 import { Constructor } from '../../shared/types/Constructor';
-import { Registry } from '../di/Registry';
+
+export const INJECTABLE_METADATA_KEY = 'custom:injectable';
 
 export function Injectable(): ClassDecorator {
   return (target) => {
-    Registry.getInstance().register(target as unknown as Constructor);
+    Reflect.defineMetadata(INJECTABLE_METADATA_KEY, true, target);
   };
+}
+
+export function isInjectable(target: Constructor): boolean {
+  return Reflect.getMetadata(INJECTABLE_METADATA_KEY, target);
 }

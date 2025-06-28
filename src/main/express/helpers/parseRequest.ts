@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-import { SchemaOptions } from '../../kernel/decorators/Schema';
+import { SchemaOptions } from '../../../kernel/decorators/Schema';
 
 export function parseRequest(request: Request, schema: SchemaOptions) {
   return {

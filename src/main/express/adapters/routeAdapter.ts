@@ -1,17 +1,17 @@
 import { RequestHandler } from 'express';
 import { ZodError } from 'zod';
 
-import { getSchema } from '../../kernel/decorators/Schema';
-import { Constructor } from '../../shared/types/Constructor';
-import { Response } from '../../shared/types/Response';
-import { parseRequest } from '../utils/parseRequest';
+import { getSchema } from '../../../kernel/decorators/Schema';
+import { Response } from '../../../shared/types/Response';
+import { parseRequest } from '../helpers/parseRequest';
 
-export function routeAdapter(
-  impl: Constructor,
+export function expressRouteAdapter(
   controller: any,
   methodName: string,
 ): RequestHandler {
-  const schema = getSchema(impl, methodName);
+  const prototype = Object.getPrototypeOf(controller);
+
+  const schema = getSchema(prototype, methodName);
 
   return async (request, response) => {
     try {
