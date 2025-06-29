@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
 export const createAccountSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().nonempty(),
+  name: z.string().nonempty('Name is required.'),
+  email: z.string().email('E-mail invalid.').nonempty('E-mail is required.'),
 });
 
 export type CreateAccountDto = z.infer<typeof createAccountSchema>;

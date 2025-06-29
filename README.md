@@ -11,7 +11,7 @@ Foi desenvolvido com foco em **modularidade**, **injeção de dependência**, **
 
 ## 🧠 Principais Recursos
 
-- ✅ Roteamento com decorators: `@Controller`, `@Get`, `@Post`, etc.
+- ✅ Roteamento com decorators: `@Controller`, `@Module`, `@Get`, `@Post`, etc.
 - ✅ Registro automático de rotas
 - ✅ Injeção de dependência baseada em metadata
 - ✅ Adaptador HTTP desacoplado do Express
@@ -35,7 +35,10 @@ src/
 │   ├── schemas/
 │   └── repositories/
 ├── main/
-│   └── adapters/
+│   ├─── contracts/
+│   ├─── lib/
+│   ├─── AppModule          # Modulo global
+│   └─── main               # Start do projeto
 └── shared/
     └── types/              # Tipagens genéricas Request<T>, Response<T>
 ```
@@ -67,6 +70,14 @@ export class AccountsController {
     return { code: 201, body: result };
   }
 }
+```
+
+```ts
+@Module({
+  controllers: [AccountsController],
+  providers: [AccountsService, AccountsRepository],
+})
+export class AccountsModule {}
 ```
 
 ---
@@ -115,7 +126,7 @@ import 'reflect-metadata';
 
 ## 🧪 Testes e extensibilidade
 
-Como os controllers não dependem diretamente do Express, podem ser testados facilmente com objetos puros:
+Como os controllers não dependem diretamente do Express ou do Fastify, podem ser testados facilmente com objetos puros:
 
 ```ts
 const controller = new AccountsController(serviceMock);
