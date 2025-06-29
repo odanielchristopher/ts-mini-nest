@@ -8,9 +8,14 @@ import { FastifyServer } from './lib/FastifyServer';
 async function bootstrap() {
   loadModule(AppModule);
 
-  const server = new FastifyServer(3001);
+  const server = new FastifyServer();
 
-  await server.startServer();
+  server.startServer();
+
+  await server.listen(3001, () =>
+    // eslint-disable-next-line no-console
+    console.log(`🚀 Server is running on http://localhost:3001`),
+  );
 }
 
 bootstrap();

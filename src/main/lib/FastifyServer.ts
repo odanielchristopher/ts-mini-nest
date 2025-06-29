@@ -1,4 +1,4 @@
-import Fastify, { FastifyPluginAsync } from 'fastify';
+import Fastify, { FastifyPluginAsync, RouteHandlerMethod } from 'fastify';
 import {
   hasZodFastifySchemaValidationErrors,
   serializerCompiler,
@@ -6,7 +6,7 @@ import {
   ZodTypeProvider,
 } from 'fastify-type-provider-zod';
 
-import { getSchema } from '../../kernel/decorators/Schema';
+import { getSchema, SchemaOptions } from '../../kernel/decorators/Schema';
 import { Registry } from '../../kernel/di/Registry';
 import { Response } from '../../shared/types/Response';
 import { IServer } from '../contracts/Server';
@@ -14,24 +14,22 @@ import { IServer } from '../contracts/Server';
 export class FastifyServer implements IServer {
   private readonly fastify = Fastify().withTypeProvider<ZodTypeProvider>();
 
-  constructor(private readonly port: number) {}
-
-  async startServer(): Promise<void> {
+  startServer() {
     this.fastify.setValidatorCompiler(validatorCompiler);
     this.fastify.setSerializerCompiler(serializerCompiler);
 
     this.fastify.register(this.routes());
     this.setErrorHandler();
+  }
 
+  async listen(port: number, callback: (param?: any) => void): Promise<void> {
     try {
-      await this.fastify.listen({ port: this.port });
-
-      // eslint-disable-next-line no-console
-      console.log(`🚀 Server is running on http://localhost:${this.port}`);
+      await this.fastify.listen({ port });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);
     }
+    callback();
   }
 
   private routes(): FastifyPluginAsync {
@@ -49,26 +47,13 @@ export class FastifyServer implements IServer {
           // eslint-disable-next-line no-console
           console.log(fullPath, method.toUpperCase());
 
-          const {
-            body,
-            params,
-            query: querystring,
-          } = getSchema(impl.prototype, methodName);
+          const schema = getSchema(impl.prototype, methodName);
 
           fastify.route({
             method,
             url: fullPath,
-            schema: {
-              body,
-              params,
-              querystring,
-            },
-            handler: async (request, reply) => {
-              const { code, body }: Response<any> =
-                await controller[methodName](request);
-
-              reply.code(code).send(body);
-            },
+            schema: this.parseSchema(schema),
+            handler: this.routeAdapter(controller, methodName),
           });
         }
       }
@@ -90,5 +75,33 @@ export class FastifyServer implements IServer {
       console.log(error);
       return reply.code(500).send({ error: 'Internal server error.' });
     });
+  }
+
+  private parseSchema(schema: SchemaOptions | undefined) {
+    const parsed: Record<string, unknown> = {};
+
+    if (schema?.body) {
+      parsed.body = schema.body;
+    }
+    if (schema?.params) {
+      parsed.params = schema.params;
+    }
+    if (schema?.query) {
+      parsed.querystring = schema.query;
+    }
+
+    return parsed;
+  }
+
+  private routeAdapter(
+    controller: any,
+    methodName: string,
+  ): RouteHandlerMethod {
+    return async (request, reply) => {
+      const { code, body }: Response<any> =
+        await controller[methodName](request);
+
+      reply.code(code).send(body);
+    };
   }
 }

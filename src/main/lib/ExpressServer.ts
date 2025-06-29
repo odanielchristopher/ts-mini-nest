@@ -1,24 +1,23 @@
-import express, { RequestHandler, Router } from 'express';
+import express, { Request, RequestHandler, Router } from 'express';
 import { ZodError } from 'zod';
 
-import { getSchema } from '../../kernel/decorators/Schema';
+import { getSchema, SchemaOptions } from '../../kernel/decorators/Schema';
 import { Registry } from '../../kernel/di/Registry';
 import { Response } from '../../shared/types/Response';
-import { parseRequest } from '../../shared/utils/parseRequest';
 import { IServer } from '../contracts/Server';
 
 export class ExpressServer implements IServer {
-  constructor(private readonly port: number) {}
+  private readonly app = express();
 
-  async startServer() {
-    const app = express();
-    app.use(express.json());
-    app.use(this.routes());
+  constructor() {}
 
-    app.listen(this.port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`🚀 Server is running on http://localhost:${this.port}`);
-    });
+  startServer() {
+    this.app.use(express.json());
+    this.app.use(this.routes());
+  }
+
+  async listen(port: number, callback: (param?: any) => void): Promise<void> {
+    this.app.listen(port, callback);
   }
 
   private routes() {
@@ -52,7 +51,7 @@ export class ExpressServer implements IServer {
     return async (request, response) => {
       try {
         // Faz parse da request, se houver schema
-        const input = schema ? parseRequest(request, schema) : request;
+        const input = schema ? this.parseRequest(request, schema) : request;
 
         // Chama o handler original
         const { code, body }: Response<any> =
@@ -69,6 +68,14 @@ export class ExpressServer implements IServer {
         console.log(error);
         response.status(500).send({ error: 'Internal Server Error!' });
       }
+    };
+  }
+
+  private parseRequest(request: Request, schema: SchemaOptions) {
+    return {
+      body: schema?.body ? schema.body.parse(request.body) : undefined,
+      params: schema?.params ? schema.params.parse(request.params) : undefined,
+      query: schema?.query ? schema.query.parse(request.query) : undefined,
     };
   }
 }
