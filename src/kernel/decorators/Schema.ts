@@ -14,9 +14,6 @@ export function Schema(options: SchemaOptions): MethodDecorator {
   };
 }
 
-export function getSchema(
-  prototype: any,
-  propertyKey: string,
-): SchemaOptions | undefined {
-  return Reflect.getMetadata(SCHEMA_METADATA_KEY, prototype, propertyKey);
+export function getSchema(prototype: any, propertyKey: string): SchemaOptions {
+  return Reflect.getMetadata(SCHEMA_METADATA_KEY, prototype, propertyKey) ?? {};
 }

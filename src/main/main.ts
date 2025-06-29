@@ -3,12 +3,14 @@ import 'reflect-metadata';
 import { loadModule } from '../kernel/di/loadModule';
 
 import { AppModule } from './AppModule';
-import { startExpress } from './express/start';
+import { FastifyServer } from './lib/FastifyServer';
 
 async function bootstrap() {
   loadModule(AppModule);
 
-  startExpress();
+  const server = new FastifyServer(3001);
+
+  await server.startServer();
 }
 
 bootstrap();

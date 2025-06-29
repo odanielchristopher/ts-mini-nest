@@ -8,7 +8,7 @@ const HTTP_HANDLER_LIST_METADATA_KEY = 'custom:http:all';
 
 export function createRouteDecorator(method: HttpMethod) {
   return function (path = ''): MethodDecorator {
-    path = normalizePath(path);
+    path = path && normalizePath(path);
 
     return (target, propertyKey) => {
       const handlerMetadata: HttpHandler = {
