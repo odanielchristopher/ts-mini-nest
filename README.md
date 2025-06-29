@@ -11,7 +11,7 @@ Foi desenvolvido com foco em **modularidade**, **injeção de dependência**, **
 
 ## 🧠 Principais Recursos
 
-- ✅ Roteamento com decorators: `@Controller`, `@Get`, `@Post`, etc.
+- ✅ Roteamento com decorators: `@Controller`, `@Module`, `@Get`, `@Post`, etc.
 - ✅ Registro automático de rotas
 - ✅ Injeção de dependência baseada em metadata
 - ✅ Adaptador HTTP desacoplado do Express
