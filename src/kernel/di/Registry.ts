@@ -1,91 +1,68 @@
 import { Constructor } from '../../shared/types/Constructor';
-import { HttpHandler } from '../../shared/types/HttpHandler';
-import { getHandlerList } from '../../shared/utils/createRouteDecorator';
-import { getPrefix, isController } from '../decorators/Controller';
-import { isInjectable } from '../decorators/Injectable';
+import { getModuleMetadata } from '../decorators/Module';
 
-export class Registry {
+import { Container } from './Container';
+import { ControllerRegistry } from './ControllerRegistry';
+import { ModuleRegistry } from './ModuleRegistry';
+import { IRegistry } from './types';
+
+export class Registry implements IRegistry {
   private static instance: Registry;
 
-  private readonly providers = new Map<string, Registry.Provider>();
-  private readonly controllers: Registry.Controller[] = [];
+  private constructor(
+    private readonly container: Container,
+    private readonly moduleRegistry: ModuleRegistry,
+    private readonly controllerRegistry: ControllerRegistry,
+  ) {}
 
-  static getInstance() {
+  static getInstance(): Registry {
     if (!this.instance) {
-      this.instance = new Registry();
-    }
+      const moduleRegistry = new ModuleRegistry();
+      const container = new Container(moduleRegistry);
+      const controllerRegistry = new ControllerRegistry();
 
+      this.instance = new Registry(
+        container,
+        moduleRegistry,
+        controllerRegistry,
+      );
+    }
     return this.instance;
   }
 
-  private constructor() {}
+  registerModule(module: Constructor) {
+    const metadata = getModuleMetadata(module);
 
-  register(impl: Constructor) {
-    const token = impl.name;
+    if (!metadata) throw new Error(`${module.name} is not a module`);
 
-    if (this.providers.has(token)) {
-      return;
-    }
+    this.moduleRegistry.register(module);
 
-    // Descobre dependências do construtor
-    const deps = Reflect.getMetadata('design:paramtypes', impl) ?? [];
+    // Process imports first
+    metadata.imports?.forEach((imported) => this.registerModule(imported));
 
-    this.providers.set(token, {
-      impl,
-      deps,
+    // Register providers
+    metadata.providers?.forEach((provider) => {
+      this.container.register(provider, module);
     });
 
-    // Verifica se é um controller
-    if (isController(impl)) {
-      this.setController(impl);
-    }
-  }
-
-  resolve<TImpl extends Constructor>(impl: TImpl): InstanceType<TImpl> {
-    const token = impl.name;
-    const provider = this.providers.get(token);
-
-    if (!provider) {
-      throw new Error(`'${token}' not registered.`);
-    }
-
-    if (!isInjectable(impl) && !isController(impl)) {
-      throw new Error(`'${token}' is not injectable.`);
-    }
-
-    const deps = provider.deps.map((dep) => this.resolve(dep));
-    const instance = new provider.impl(...deps);
-
-    return instance;
-  }
-
-  getControllers(): Registry.Controller[] {
-    return this.controllers;
-  }
-
-  private setController(impl: Constructor) {
-    const prototype = impl.prototype;
-
-    const prefix = getPrefix(impl);
-    const handlers = getHandlerList(prototype);
-
-    this.controllers.push({
-      impl,
-      prefix,
-      handlers,
+    // Register controllers
+    metadata.controllers?.forEach((controller) => {
+      this.controllerRegistry.register(controller, module);
+      this.container.register(controller, module);
     });
   }
-}
 
-export namespace Registry {
-  export type Provider = {
-    impl: Constructor;
-    deps: Constructor[];
-  };
+  resolve<T extends Constructor>(
+    token: T,
+    requestingModule?: Constructor,
+  ): InstanceType<T> {
+    return this.container.resolve(token, requestingModule);
+  }
 
-  export type Controller = {
-    impl: Constructor;
-    prefix: string;
-    handlers: (HttpHandler & { methodName: string })[];
-  };
+  getControllers() {
+    return this.controllerRegistry.getAll().map((controller) => ({
+      ...controller,
+      instance: this.resolve(controller.impl, controller.module),
+    }));
+  }
 }
