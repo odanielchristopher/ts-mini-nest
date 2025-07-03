@@ -1,16 +1,17 @@
 import 'reflect-metadata';
 
 import { loadModule } from '../kernel/di/loadModule';
+import { IServer } from '../shared/contracts/Server';
 
 import { AppModule } from './AppModule';
-import { FastifyServer } from './lib/FastifyServer';
+import { ExpressServer } from './lib/ExpressServer';
 
 async function bootstrap() {
   loadModule(AppModule);
 
-  const server = new FastifyServer();
+  const server: IServer = new ExpressServer();
 
-  server.startServer();
+  server.setupServer();
 
   await server.listen(3001, () =>
     // eslint-disable-next-line no-console

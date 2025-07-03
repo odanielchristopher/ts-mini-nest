@@ -8,13 +8,13 @@ import {
 
 import { getSchema, SchemaOptions } from '../../kernel/decorators/Schema';
 import { Registry } from '../../kernel/di/Registry';
+import { IServer } from '../../shared/contracts/Server';
 import { Response } from '../../shared/types/Response';
-import { IServer } from '../contracts/Server';
 
 export class FastifyServer implements IServer {
   private readonly fastify = Fastify().withTypeProvider<ZodTypeProvider>();
 
-  startServer() {
+  setupServer() {
     this.fastify.setValidatorCompiler(validatorCompiler);
     this.fastify.setSerializerCompiler(serializerCompiler);
 

@@ -3,15 +3,15 @@ import { ZodError } from 'zod';
 
 import { getSchema, SchemaOptions } from '../../kernel/decorators/Schema';
 import { Registry } from '../../kernel/di/Registry';
+import { IServer } from '../../shared/contracts/Server';
 import { Response } from '../../shared/types/Response';
-import { IServer } from '../contracts/Server';
 
 export class ExpressServer implements IServer {
   private readonly app = express();
 
   constructor() {}
 
-  startServer() {
+  setupServer() {
     this.app.use(express.json());
     this.app.use(this.routes());
   }
