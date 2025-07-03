@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 
-import { loadModule } from '../kernel/di/loadModule';
+import { Registry } from '../kernel/di/Registry';
 import { IServer } from '../shared/contracts/Server';
 
 import { AppModule } from './AppModule';
-import { ExpressServer } from './lib/ExpressServer';
+import { ExpressServer } from './lib/express/ExpressServer';
 
 async function bootstrap() {
-  loadModule(AppModule);
+  Registry.getInstance().registerModule(AppModule);
 
   const server: IServer = new ExpressServer();
 

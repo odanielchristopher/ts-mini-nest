@@ -6,6 +6,7 @@ export type ModuleMetadata = {
   imports?: Constructor[];
   controllers?: Constructor[];
   providers?: Constructor[];
+  exports?: Constructor[];
 };
 
 export function Module(metadata: ModuleMetadata): ClassDecorator {
