@@ -16,7 +16,7 @@ export class Container {
   ) {
     this.scopeValidator = new ScopeValidator(
       moduleRegistry,
-      this.getProviderModule.bind(this), // Injeta a função de lookup
+      this.getProviderModule.bind(this),
       globalModule,
     );
   }

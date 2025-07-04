@@ -93,16 +93,15 @@ export class Registry implements IRegistry {
       ? (this.moduleRegistry.getModuleGuards(module) ?? [])
       : [];
 
-    // Obter guards globais diretamente do módulo global
     const globalModule = Registry.getGlobalModule();
     const globalGuards =
       this.moduleRegistry.getModuleGuards(globalModule) ?? [];
 
     const allGuards = [
-      ...globalGuards, // Guards globais primeiro
-      ...moduleGuards, // Depois guards do módulo
-      ...classGuards, // Depois guards da classe
-      ...methodGuards, // Por último guards do método
+      ...globalGuards,
+      ...moduleGuards,
+      ...classGuards,
+      ...methodGuards,
     ];
 
     // Remover duplicados por nome da classe mantendo a ordem
