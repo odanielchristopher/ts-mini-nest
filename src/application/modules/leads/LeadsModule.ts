@@ -1,6 +1,10 @@
+import { z } from 'zod';
+
 import { Controller } from '../../../kernel/decorators/Controller';
 import { Get } from '../../../kernel/decorators/http/Get';
 import { Module } from '../../../kernel/decorators/Module';
+import { Schema } from '../../../kernel/decorators/Schema';
+import { Request } from '../../../shared/types/Request';
 import { AccountsModule } from '../accounts/AccountsModule';
 import { AccountsService } from '../accounts/AccountsService';
 
@@ -8,10 +12,14 @@ import { AccountsService } from '../accounts/AccountsService';
 export class LeadsController {
   constructor(private readonly accountsService: AccountsService) {}
 
-  @Get()
-  getAll() {
-    console.log({ accountsService: this.accountsService });
-    console.log('GET LEADS');
+  @Get(':id')
+  @Schema({
+    params: z.object({
+      id: z.string(),
+    }),
+  })
+  geAll(request: Request) {
+    console.log('Hello from leads', request.params);
   }
 }
 

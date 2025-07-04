@@ -35,9 +35,11 @@ export class HttpAdapter {
 
   private parseRequest(request: ExpressRequest, schema: SchemaOptions) {
     return {
-      body: schema?.body ? schema.body.parse(request.body) : undefined,
-      params: schema?.params ? schema.params.parse(request.params) : undefined,
-      query: schema?.query ? schema.query.parse(request.query) : undefined,
+      body: schema?.body ? schema.body.parse(request.body) : request.body,
+      params: schema?.params
+        ? schema.params.parse(request.params)
+        : request.params,
+      query: schema?.query ? schema.query.parse(request.query) : request.query,
     };
   }
 
