@@ -1,9 +1,11 @@
 import { AccountsModule } from '../application/modules/accounts/AccountsModule';
+import { AuthGuard } from '../application/modules/leads/LeadsController';
 import { LeadsModule } from '../application/modules/leads/LeadsModule';
-import { Module } from '../kernel/decorators/Module';
+import { GlobalModule } from '../kernel/decorators/GlobalModule';
 
 // O AppModule deve importar todos os modulos do sistema
-@Module({
+@GlobalModule({
   imports: [AccountsModule, LeadsModule],
+  guards: [AuthGuard],
 })
 export class AppModule {}

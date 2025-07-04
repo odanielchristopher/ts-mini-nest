@@ -8,6 +8,7 @@ export class ScopeValidator {
     private readonly getProviderModule: (
       provider: Constructor,
     ) => Constructor | undefined,
+    private readonly globalModule: Constructor,
   ) {}
 
   verify(
@@ -16,6 +17,11 @@ export class ScopeValidator {
     requestingModule: Constructor | undefined,
     resolutionPath: Constructor[],
   ) {
+    // Permite acesso a providers do módulo global
+    if (tokenModuleOwner === this.globalModule) {
+      return;
+    }
+
     // Providers globais (sem módulo) são sempre acessíveis
     if (!tokenModuleOwner) return;
 
@@ -54,6 +60,9 @@ export class ScopeValidator {
     requestingModule: Constructor,
     resolutionPath: Constructor[],
   ): boolean {
+    // 0. Se for de um módulo global então é permitido o acesso.
+    if (tokenModuleOwner === this.globalModule) return true;
+
     // 1. Mesmo módulo - sempre permitido
     if (tokenModuleOwner === requestingModule) return true;
 

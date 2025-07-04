@@ -43,6 +43,10 @@ export class ModuleRegistry {
   getModuleImports(module: Constructor): Constructor[] | undefined {
     return this.modules.get(module.name)?.metadata.imports;
   }
+
+  getModuleGuards(module: Constructor): Constructor[] | undefined {
+    return this.modules.get(module.name)?.metadata.guards;
+  }
 }
 
 export namespace ModuleRegistry {
