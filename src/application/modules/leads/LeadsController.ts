@@ -6,16 +6,10 @@ import { Get } from '../../../kernel/decorators/http/Get';
 import { Injectable } from '../../../kernel/decorators/Injectable';
 import { Schema } from '../../../kernel/decorators/Schema';
 import { IGuard } from '../../../shared/contracts/IGuard';
+import { IsPublic } from '../../../shared/decorators/IsPublic';
+import { RequiredRoles } from '../../../shared/decorators/RequiredRoles';
 import { Request } from '../../../shared/types/Request';
 import { AccountsService } from '../accounts/AccountsService';
-
-@Injectable()
-export class AuthGuard implements IGuard {
-  canActivate() {
-    console.log('Chamou o auth');
-    return true;
-  }
-}
 
 @Injectable()
 export class LogGuard implements IGuard {
@@ -27,6 +21,8 @@ export class LogGuard implements IGuard {
 }
 
 @Controller('leads')
+@IsPublic()
+@RequiredRoles(['ADMIN'])
 export class LeadsController {
   constructor(private readonly accountsService: AccountsService) {}
 
@@ -37,6 +33,7 @@ export class LeadsController {
     }),
   })
   @Guard(LogGuard)
+  // @RequiredRoles(['USER'])
   geAll(request: Request) {
     console.log('Hello from leads', request.params);
   }

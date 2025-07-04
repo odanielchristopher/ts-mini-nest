@@ -1,7 +1,5 @@
-import { Request } from '../types/Request';
+import { RequestRouteMetadata } from '../../kernel/context/RequestContext';
 
 export interface IGuard {
-  canActivate(
-    request: Request<unknown, unknown, unknown, unknown>,
-  ): Promise<boolean> | boolean;
+  canActivate(context: RequestRouteMetadata): Promise<boolean> | boolean;
 }

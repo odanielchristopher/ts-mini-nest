@@ -8,6 +8,7 @@ import { ZodError } from 'zod';
 import { ApplicationError } from '../../../../application/errors/application/ApplicationError';
 import { ErrorCode } from '../../../../application/errors/ErrorCode';
 import { HttpError } from '../../../../application/errors/http/HttpError';
+import { RequestContext } from '../../../../kernel/context/RequestContext';
 import { getSchema, SchemaOptions } from '../../../../kernel/decorators/Schema';
 import { Registry } from '../../../../kernel/di/Registry';
 import { IGuard } from '../../../../shared/contracts/IGuard';
@@ -21,22 +22,34 @@ export class HttpAdapter {
     methodName: string,
   ): RequestHandler {
     return async (request, response) => {
-      try {
-        const prototype = Object.getPrototypeOf(controller);
+      const prototype = Object.getPrototypeOf(controller);
 
-        await this.executeGuards(controller, methodName, request, response);
-        if (response.headersSent) return;
+      RequestContext.run(
+        {
+          controller: {
+            constructor: controller.constructor as Constructor,
+            prototype,
+          },
+          request,
+          propertyKey: methodName,
+        },
+        async () => {
+          try {
+            await this.executeGuards(controller, methodName, response);
+            if (response.headersSent) return;
 
-        const schema = getSchema(prototype, methodName);
-        const input = schema ? this.parseRequest(request, schema) : request;
+            const schema = getSchema(prototype, methodName);
+            const input = schema ? this.parseRequest(request, schema) : request;
 
-        const result: Response<unknown> | undefined =
-          await controller[methodName](input);
+            const result: Response<unknown> | undefined =
+              await controller[methodName](input);
 
-        response.status(result?.code ?? 200).send(result?.body);
-      } catch (error) {
-        this.handleError(error, response);
-      }
+            response.status(result?.code ?? 200).send(result?.body);
+          } catch (error) {
+            this.handleError(error, response);
+          }
+        },
+      );
     };
   }
 
@@ -87,23 +100,29 @@ export class HttpAdapter {
   private async executeGuards<TImpl extends Constructor>(
     controller: InstanceType<TImpl>,
     methodName: string,
-    request: ExpressRequest,
     response: ExpressResponse,
   ) {
     const guards: IGuard[] =
       Registry.getInstance().getGuardsFor(controller.constructor, methodName) ??
       [];
 
-    for (const guard of guards) {
-      const isAllowed = await guard.canActivate(request);
+    const context = RequestContext.getContext();
 
-      if (!isAllowed) {
-        response.status(403).send(
-          httpErrorResponse({
-            code: ErrorCode.FORBIDDEN,
-            message: 'Forbidden',
-          }),
-        );
+    for (const guard of guards) {
+      try {
+        const isAllowed = await guard.canActivate(context);
+
+        if (!isAllowed) {
+          response.status(403).send(
+            httpErrorResponse({
+              code: ErrorCode.FORBIDDEN,
+              message: 'Forbidden',
+            }),
+          );
+          return;
+        }
+      } catch (error) {
+        this.handleError(error, response);
         return;
       }
     }
