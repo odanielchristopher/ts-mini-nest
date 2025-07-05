@@ -28,7 +28,7 @@ export class AccountsController {
     });
 
     return {
-      code: 200,
+      code: 201,
       body,
     };
   }

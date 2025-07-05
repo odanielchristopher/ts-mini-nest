@@ -1,4 +1,4 @@
 export interface IServer {
-  startServer(): void;
+  setupServer(): void;
   listen(port: number, callback: (param?: any) => void): Promise<void>;
 }

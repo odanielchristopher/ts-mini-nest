@@ -1,91 +1,119 @@
 import { Constructor } from '../../shared/types/Constructor';
-import { HttpHandler } from '../../shared/types/HttpHandler';
-import { getHandlerList } from '../../shared/utils/createRouteDecorator';
-import { getPrefix, isController } from '../decorators/Controller';
-import { isInjectable } from '../decorators/Injectable';
+import { getGuards } from '../decorators/Guard';
+import { getControllerOwner, getModuleMetadata } from '../decorators/Module';
 
-export class Registry {
+import { Container } from './Container';
+import { ControllerRegistry } from './ControllerRegistry';
+import { ModuleRegistry } from './ModuleRegistry';
+import { IRegistry } from './types';
+
+export class Registry implements IRegistry {
   private static instance: Registry;
+  private static globalModule?: Constructor;
 
-  private readonly providers = new Map<string, Registry.Provider>();
-  private readonly controllers: Registry.Controller[] = [];
+  static setGlobalModule(module: Constructor) {
+    this.globalModule = module;
+  }
 
-  static getInstance() {
-    if (!this.instance) {
-      this.instance = new Registry();
+  static getGlobalModule(): Constructor {
+    if (!this.globalModule) {
+      throw new Error('Global module is not registered.');
     }
 
+    return this.globalModule;
+  }
+
+  private constructor(
+    private readonly container: Container,
+    private readonly moduleRegistry: ModuleRegistry,
+    private readonly controllerRegistry: ControllerRegistry,
+  ) {}
+
+  static getInstance(): Registry {
+    if (!this.instance) {
+      const moduleRegistry = new ModuleRegistry();
+      const container = new Container(moduleRegistry, this.getGlobalModule());
+      const controllerRegistry = new ControllerRegistry();
+
+      this.instance = new Registry(
+        container,
+        moduleRegistry,
+        controllerRegistry,
+      );
+    }
     return this.instance;
   }
 
-  private constructor() {}
+  registerModule(module: Constructor) {
+    const metadata = getModuleMetadata(module);
 
-  register(impl: Constructor) {
-    const token = impl.name;
+    if (!metadata) throw new Error(`${module.name} is not a module`);
 
-    if (this.providers.has(token)) {
-      return;
-    }
+    this.moduleRegistry.register(module);
 
-    // Descobre dependências do construtor
-    const deps = Reflect.getMetadata('design:paramtypes', impl) ?? [];
+    // Process imports first
+    metadata.imports?.forEach((imported) => this.registerModule(imported));
 
-    this.providers.set(token, {
-      impl,
-      deps,
+    // Register providers
+    metadata.providers?.forEach((provider) => {
+      this.container.register(provider, module);
     });
 
-    // Verifica se é um controller
-    if (isController(impl)) {
-      this.setController(impl);
-    }
-  }
+    // Register controllers
+    metadata.controllers?.forEach((controller) => {
+      this.controllerRegistry.register(controller, module);
+      this.container.register(controller, module);
+    });
 
-  resolve<TImpl extends Constructor>(impl: TImpl): InstanceType<TImpl> {
-    const token = impl.name;
-    const provider = this.providers.get(token);
-
-    if (!provider) {
-      throw new Error(`'${token}' not registered.`);
-    }
-
-    if (!isInjectable(impl) && !isController(impl)) {
-      throw new Error(`'${token}' is not injectable.`);
-    }
-
-    const deps = provider.deps.map((dep) => this.resolve(dep));
-    const instance = new provider.impl(...deps);
-
-    return instance;
-  }
-
-  getControllers(): Registry.Controller[] {
-    return this.controllers;
-  }
-
-  private setController(impl: Constructor) {
-    const prototype = impl.prototype;
-
-    const prefix = getPrefix(impl);
-    const handlers = getHandlerList(prototype);
-
-    this.controllers.push({
-      impl,
-      prefix,
-      handlers,
+    metadata.guards?.forEach((guard) => {
+      this.container.register(guard, module);
     });
   }
-}
 
-export namespace Registry {
-  export type Provider = {
-    impl: Constructor;
-    deps: Constructor[];
-  };
+  resolve<T extends Constructor>(
+    token: T,
+    requestingModule?: Constructor,
+  ): InstanceType<T> {
+    return this.container.resolve(token, requestingModule);
+  }
 
-  export type Controller = {
-    impl: Constructor;
-    prefix: string;
-    handlers: (HttpHandler & { methodName: string })[];
-  };
+  getControllers() {
+    return this.controllerRegistry.getAll().map((controller) => ({
+      ...controller,
+      instance: this.resolve(controller.impl, controller.module),
+    }));
+  }
+
+  getGuardsFor(controllerClass: Constructor, methodName: string) {
+    const classGuards = getGuards(controllerClass) ?? [];
+    const methodGuards = getGuards(controllerClass.prototype, methodName) ?? [];
+
+    const module = getControllerOwner(controllerClass);
+    const moduleGuards = module
+      ? (this.moduleRegistry.getModuleGuards(module) ?? [])
+      : [];
+
+    const globalModule = Registry.getGlobalModule();
+    const globalGuards =
+      this.moduleRegistry.getModuleGuards(globalModule) ?? [];
+
+    const allGuards = [
+      ...globalGuards,
+      ...moduleGuards,
+      ...classGuards,
+      ...methodGuards,
+    ];
+
+    // Remover duplicados por nome da classe mantendo a ordem
+    const uniqueGuards = Array.from(
+      new Map(allGuards.map((g) => [g.name, g])),
+    ).map(([, guard]) => guard);
+
+    const instances = [];
+    for (const guard of uniqueGuards.values()) {
+      instances.push(this.resolve(guard, module ?? globalModule));
+    }
+
+    return instances;
+  }
 }

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "tsc:watch": "rm -rf out && tsc --watch",
+    "tsc:build": "rm -rf out && tsc",
     "start": "node --watch ./out/main/main.js"
   },
   "keywords": [],
@@ -27,8 +28,6 @@
   },
   "dependencies": {
     "express": "^5.1.0",
-    "fastify": "^5.4.0",
-    "fastify-type-provider-zod": "^4",
     "reflect-metadata": "^0.2.2",
     "zod": "^3.25.67"
   }

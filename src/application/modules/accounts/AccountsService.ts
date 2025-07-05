@@ -1,4 +1,5 @@
 import { Injectable } from '../../../kernel/decorators/Injectable';
+import { EmailAlreadyInUse } from '../../errors/application/EmailAlreadyInUse';
 
 import { AccountsRepository } from './AccountsRepository';
 import { Account } from './entities/Account';
@@ -13,7 +14,7 @@ export class AccountsService {
     const emailAlreadyExists = this.accountsRepository.findByEmail(email);
 
     if (emailAlreadyExists) {
-      throw new Error('This e-mail already in use.');
+      throw new EmailAlreadyInUse();
     }
 
     const account = this.accountsRepository.create({ name, email });
