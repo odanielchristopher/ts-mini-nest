@@ -4,10 +4,10 @@ import { Controller } from '../../../kernel/decorators/Controller';
 import { Guard } from '../../../kernel/decorators/Guard';
 import { Get } from '../../../kernel/decorators/http/Get';
 import { Injectable } from '../../../kernel/decorators/Injectable';
+import { IsPublic } from '../../../kernel/decorators/IsPublic';
+import { RequiredRoles } from '../../../kernel/decorators/RequiredRoles';
 import { Schema } from '../../../kernel/decorators/Schema';
 import { IGuard } from '../../../shared/contracts/IGuard';
-import { IsPublic } from '../../../shared/decorators/IsPublic';
-import { RequiredRoles } from '../../../shared/decorators/RequiredRoles';
 import { Request } from '../../../shared/types/Request';
 import { AccountsService } from '../accounts/AccountsService';
 

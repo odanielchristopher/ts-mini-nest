@@ -3,9 +3,9 @@ import {
   RequestRouteMetadata,
 } from '../../kernel/context/RequestContext';
 import { Injectable } from '../../kernel/decorators/Injectable';
+import { IS_PUBLIC_KEY } from '../../kernel/decorators/IsPublic';
+import { REQUIRED_ROLES_KEY } from '../../kernel/decorators/RequiredRoles';
 import { IGuard } from '../../shared/contracts/IGuard';
-import { IS_PUBLIC_KEY } from '../../shared/decorators/IsPublic';
-import { REQUIRED_ROLES_KEY } from '../../shared/decorators/RequiredRoles';
 
 @Injectable()
 export class RolesGuard implements IGuard {

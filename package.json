@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "tsc:watch": "rm -rf out && tsc --watch",
+    "tsc:build": "rm -rf out && tsc",
     "start": "node --watch ./out/main/main.js"
   },
   "keywords": [],

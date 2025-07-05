@@ -1,23 +1,24 @@
-# 🚀 Mini Framework Web com TypeScript, Decorators e Injeção de Dependência
+# 🚀 ElyumJS – Microframework Web com TypeScript, Decorators e Injeção de Dependência
 
+![ElyumJS](https://img.shields.io/badge/Made_with-ElyumJS-blueviolet?style=for-the-badge&logo=typescript)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-brightgreen)
-![TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-Este projeto é um microframework backend criado do zero com **TypeScript**, inspirado em conceitos do NestJS.
-Foi desenvolvido com foco em **modularidade**, **injeção de dependência**, **validação automática** e **arquitetura desacoplada**.
+**ElyumJS** é um microframework backend criado do zero com **TypeScript**, inspirado na arquitetura do NestJS.
+
+Foi desenvolvido com foco em **modularidade**, **injeção de dependência**, **validação automática** e **arquitetura desacoplada**, oferecendo um core leve, testável e extensível.
 
 ---
 
 ## 🧠 Principais Recursos
 
-- ✅ Roteamento com decorators: `@Controller`, `@Module`, `@Get`, `@Post`, etc.
-- ✅ Registro automático de rotas
+- ✅ Roteamento automático com decorators: `@Controller`, `@Module`, `@Get`, `@Post`, etc.
 - ✅ Injeção de dependência baseada em metadata
-- ✅ Adaptador HTTP desacoplado do Express
 - ✅ Validação automática com **Zod**
-- ✅ Controllers independentes do framework HTTP
-- ✅ Estrutura modular e testável
+- ✅ Escopo de dependências por módulo com `imports` e `exports`
+- ✅ Sistema de **Guards** (nível global, por módulo, controller e handler)
+- ✅ Arquitetura modular e testável
 
 ---
 
@@ -27,20 +28,21 @@ Foi desenvolvido com foco em **modularidade**, **injeção de dependência**, **
 src/
 ├── kernel/
 │   ├── decorators/         # Controller, Get, Post, Schema
-│   ├── di/                 # Registry de injeção
-│   └── http/               # Adaptadores e roteamento
+│   ├── context/            # RequestContext para o context dos Guards
+│   └── di/                 # Registry de injeção
 ├── application/
-│   ├── controllers/
-│   ├── services/
-│   ├── schemas/
-│   └── repositories/
+│   ├── modules/            # Módulos de exemplo do sistema
+│   ├── guards/
+│   └── errors/
 ├── main/
-│   ├─── contracts/
-│   ├─── lib/
-│   ├─── AppModule          # Modulo global
-│   └─── main               # Start do projeto
+│   ├── contracts/
+│   ├── lib/
+│   ├── AppModule          # Modulo global
+│   └── main               # Start do projeto
 └── shared/
-    └── types/              # Tipagens genéricas Request<T>, Response<T>
+    ├── contracts/         # Contratos/interfaces do sistema
+    ├── utils/             # Funções utilitárias do sistema
+    └── types/             # Tipagens genéricas Request<T>, Response<T>
 ```
 
 ---
@@ -78,6 +80,39 @@ export class AccountsController {
   providers: [AccountsService, AccountsRepository],
 })
 export class AccountsModule {}
+```
+
+```ts
+@GlobalModule({
+  imports: [AccountsModule],
+  guards: [AuthGuard], // Guard global
+})
+export class AccountsModule {}
+```
+
+---
+
+# 🔐 Sistema de Guards
+
+ElyumJS permite aplicar guards em múltiplos níveis:
+
+- Global (AppModule)
+
+- Módulo (Module)
+
+- Controller (@Guard)
+
+- Handler (@Guard no método)
+
+Todos são resolvidos com injeção de dependência, e respeitam escopo via imports/exports.
+Os guards devem implementar o método:
+
+```ts
+class AuthGuard implements IGuard {
+  canActivate(context: RequestContextMetadata): boolean | Promise<boolean> {
+    // lógica de autenticação
+  }
+}
 ```
 
 ---
@@ -124,6 +159,15 @@ import 'reflect-metadata';
 
 ---
 
+---
+
+## ⚙️ Comandos para rodar o projeto
+
+- pnpm build -> para transpilar o código
+- pnpm start -> para inicializar
+
+---
+
 ## 🧪 Testes e extensibilidade
 
 Como os controllers não dependem diretamente do Express ou do Fastify, podem ser testados facilmente com objetos puros:
@@ -143,5 +187,6 @@ expect(result.code).toBe(201);
 ## ✍️ Autor
 
 **Daniel Rodrigues**
-Desenvolvedor Full Stack | Engenheiro de Software
-Construído com propósito, estudo e paixão por arquitetura limpa.
+Desenvolvedor Full Stack | Engenheiro de Software em formação
+Apaixonado por arquitetura limpa, backend moderno e TypeScript
+🔗 GitHub | 💼 LinkedIn
